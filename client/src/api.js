@@ -33,8 +33,12 @@ export const api = {
     return response.data
   },
 
-  async getDemandForecasts() {
-    const response = await axios.get(`${API_BASE_URL}/demand`)
+  async getDemandForecasts(filters = {}) {
+    const params = new URLSearchParams()
+    if (filters.warehouse && filters.warehouse !== 'all') params.append('warehouse', filters.warehouse)
+    if (filters.category && filters.category !== 'all') params.append('category', filters.category)
+
+    const response = await axios.get(`${API_BASE_URL}/demand?${params.toString()}`)
     return response.data
   },
 
@@ -101,6 +105,16 @@ export const api = {
 
   async getPurchaseOrderByBacklogItem(backlogItemId) {
     const response = await axios.get(`${API_BASE_URL}/purchase-orders/${backlogItemId}`)
+    return response.data
+  },
+
+  async getRestockOrders() {
+    const response = await axios.get(`${API_BASE_URL}/restock-orders`)
+    return response.data
+  },
+
+  async createRestockOrder(restockOrderData) {
+    const response = await axios.post(`${API_BASE_URL}/restock-orders`, restockOrderData)
     return response.data
   }
 }

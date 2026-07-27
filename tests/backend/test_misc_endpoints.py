@@ -83,6 +83,72 @@ class TestDemandEndpoints:
                 assert item["trend"].lower() == "stable", \
                     f"New item {item['item_name']} should have stable trend"
 
+    def test_demand_forecast_restocking_fields(self, client):
+        """Test that demand forecasts include restocking data (unit_cost, lead_time_days, category, warehouse)."""
+        response = client.get("/api/demand")
+        data = response.json()
+
+        assert len(data) > 0
+
+        valid_categories = ["actuators", "power supplies", "sensors", "controllers", "circuit boards"]
+        valid_warehouses = ["San Francisco", "London", "Tokyo"]
+
+        for item in data:
+            assert "unit_cost" in item
+            assert "lead_time_days" in item
+            assert "category" in item
+            assert "warehouse" in item
+
+            assert isinstance(item["unit_cost"], (int, float))
+            assert item["unit_cost"] > 0
+
+            assert isinstance(item["lead_time_days"], int)
+            assert item["lead_time_days"] > 0
+
+            assert item["category"].lower() in valid_categories
+            assert item["warehouse"] in valid_warehouses
+
+    def test_get_demand_forecasts_by_warehouse(self, client):
+        """Test filtering demand forecasts by warehouse."""
+        response = client.get("/api/demand?warehouse=Tokyo")
+        assert response.status_code == 200
+
+        data = response.json()
+        assert len(data) > 0
+
+        for item in data:
+            assert item["warehouse"] == "Tokyo"
+
+    def test_get_demand_forecasts_by_category(self, client):
+        """Test filtering demand forecasts by category."""
+        response = client.get("/api/demand?category=Actuators")
+        assert response.status_code == 200
+
+        data = response.json()
+        assert len(data) > 0
+
+        for item in data:
+            assert item["category"].lower() == "actuators"
+
+    def test_get_demand_forecasts_multiple_filters(self, client):
+        """Test filtering demand forecasts by warehouse and category together."""
+        response = client.get("/api/demand?warehouse=San Francisco&category=Power Supplies")
+        assert response.status_code == 200
+
+        data = response.json()
+
+        for item in data:
+            assert item["warehouse"] == "San Francisco"
+            assert item["category"].lower() == "power supplies"
+
+    def test_get_demand_forecasts_no_match(self, client):
+        """Test filtering demand forecasts by a category with no matching items."""
+        response = client.get("/api/demand?category=Circuit Boards")
+        assert response.status_code == 200
+
+        data = response.json()
+        assert data == []
+
 
 class TestBacklogEndpoints:
     """Test suite for backlog endpoints."""
